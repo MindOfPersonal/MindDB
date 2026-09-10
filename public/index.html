@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindDB — MariaDB Beheerpanel</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2'><ellipse cx='12' cy='5' rx='9' ry='3'/><path d='M21 12c0 1.66-4 3-9 3s-9-1.34-9-3'/><path d='M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5'/></svg>">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ======================= AUTH SCHERM ======================= -->
+  <div id="auth-screen" class="auth-screen hidden">
+    <div class="auth-bg"></div>
+    <div class="auth-wrap">
+      <div class="auth-brand">
+        <div class="login-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        </div>
+        <h1>MindDB</h1>
+        <p>Modern MariaDB beheerpanel</p>
+      </div>
+
+      <div class="auth-card">
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab active" data-tab="login">Inloggen</button>
+          <button type="button" class="auth-tab" data-tab="register">Registreren</button>
+        </div>
+
+        <form id="auth-login-form" class="auth-form" autocomplete="on">
+          <div class="form-group">
+            <label for="al-identifier">Gebruikersnaam of e-mail</label>
+            <input id="al-identifier" type="text" autocomplete="username" spellcheck="false" required autofocus>
+          </div>
+          <div class="form-group">
+            <label for="al-password">Wachtwoord</label>
+            <input id="al-password" type="password" autocomplete="current-password" required>
+          </div>
+          <label class="checkbox"><input id="al-remember" type="checkbox" checked> <span>Aangemeld blijven</span></label>
+          <div class="auth-error" id="auth-login-error"></div>
+          <button type="submit" class="btn btn-primary btn-block" id="al-submit">Inloggen</button>
+        </form>
+
+        <form id="auth-register-form" class="auth-form hidden" autocomplete="on">
+          <div class="form-group">
+            <label for="ar-username">Gebruikersnaam</label>
+            <input id="ar-username" type="text" autocomplete="username" spellcheck="false" required>
+          </div>
+          <div class="form-group">
+            <label for="ar-email">E-mail <span class="label-hint">(optioneel)</span></label>
+            <input id="ar-email" type="email" autocomplete="email" spellcheck="false">
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="ar-password">Wachtwoord</label>
+              <input id="ar-password" type="password" autocomplete="new-password" required>
+            </div>
+            <div class="form-group">
+              <label for="ar-password2">Herhaal wachtwoord</label>
+              <input id="ar-password2" type="password" autocomplete="new-password" required>
+            </div>
+          </div>
+          <div class="auth-error" id="auth-register-error"></div>
+          <button type="submit" class="btn btn-primary btn-block" id="ar-submit">Account aanmaken</button>
+        </form>
+
+        <div class="auth-footer" id="auth-allow-note">De eerste gebruiker wordt beheerder van het paneel.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================= LOGIN SCHERM ======================= -->
+  <div id="login-screen" class="login-screen hidden">
+    <div class="login-bg"></div>
+    <div class="login-wrap">
+      <div class="login-brand">
+        <div class="login-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+        </div>
+        <h1>MindDB</h1>
+        <p>Modern MariaDB beheerpanel</p>
+      </div>
+
+      <div class="login-card">
+        <div class="login-profiles" id="login-profiles"></div>
+        <form id="login-form" autocomplete="off">
+          <div class="form-row-2">
+            <div class="form-group" style="flex:3">
+              <label for="lf-host">Host</label>
+              <input id="lf-host" type="text" value="localhost" required spellcheck="false">
+            </div>
+            <div class="form-group" style="flex:1">
+              <label for="lf-port">Poort</label>
+              <input id="lf-port" type="number" value="3306" min="1" max="65535">
+            </div>
+          </div>
+          <div class="form-row-2">
+            <div class="form-group">
+              <label for="lf-user">Gebruiker</label>
+              <input id="lf-user" type="text" value="root" required spellcheck="false">
+            </div>
+            <div class="form-group">
+              <label for="lf-password">Wachtwoord</label>
+              <input id="lf-password" type="password" placeholder="••••••••">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="lf-database">Database <span class="label-hint">(optioneel)</span></label>
+            <input id="lf-database" type="text" placeholder="Alle databases" spellcheck="false">
+          </div>
+          <div class="form-row-2" style="align-items:center">
+            <div class="form-group" style="margin:0">
+              <label class="checkbox"><input id="lf-save" type="checkbox"> <span>Bewaar als profiel</span></label>
+            </div>
+            <div class="form-group" style="margin:0">
+              <input id="lf-name" type="text" placeholder="Profielnaam" spellcheck="false" disabled>
+            </div>
+          </div>
+          <div class="login-error" id="login-error"></div>
+          <div class="login-actions">
+            <button type="button" class="btn btn-ghost" id="btn-test">Test verbinding</button>
+            <button type="submit" class="btn btn-primary" id="btn-connect">
+              <span class="btn-label">Verbinden</span>
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="login-footer">MindDB · lokaal &amp; veilig · verbindingen blijven op deze machine</div>
+    </div>
+  </div>
+
+  <!-- ======================= APP SHELL ======================= -->
+  <div id="app" class="app hidden">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="app-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          <span>MindDB</span>
+        </div>
+        <button class="icon-btn" id="btn-refresh-tree" title="Vernieuwen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        </button>
+      </div>
+
+      <div class="conn-chip" id="conn-chip" title="Verbindingsinfo"></div>
+
+      <div class="sidebar-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="tree-filter" type="text" placeholder="Zoek database of tabel…" spellcheck="false">
+      </div>
+
+      <div class="tree" id="tree"></div>
+
+      <div class="sidebar-footer">
+        <div class="user-box" id="user-box">
+          <div class="user-avatar" id="user-avatar">?</div>
+          <div class="user-meta">
+            <div class="user-name" id="user-name">—</div>
+            <div class="user-role" id="user-role"></div>
+          </div>
+          <button class="icon-btn" id="btn-panel-users" title="Paneelgebruikers beheren" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </button>
+          <button class="icon-btn danger" id="btn-logout" title="Uitloggen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        </div>
+        <button class="btn btn-ghost btn-block" id="btn-new-query">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          Nieuwe query
+        </button>
+        <button class="btn btn-ghost btn-block" id="btn-disconnect">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+          Verbinding verbreken
+        </button>
+      </div>
+    </aside>
+    <div class="sidebar-resizer" id="sidebar-resizer"></div>
+    <div class="nav-backdrop" id="nav-backdrop"></div>
+
+    <!-- Main -->
+    <main class="main">
+      <div class="mobile-bar">
+        <button class="icon-btn" id="btn-menu" title="Menu" aria-label="Menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <span class="mobile-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+          MindDB
+        </span>
+        <span class="spacer"></span>
+        <span class="mobile-conn" id="mobile-conn"></span>
+      </div>
+      <div class="tabbar" id="tabbar"></div>
+      <div class="tab-content" id="tab-content"></div>
+      <div class="statusbar" id="statusbar">
+        <span id="status-conn" class="status-item"></span>
+        <span class="status-spacer"></span>
+        <span id="status-msg" class="status-item status-msg"></span>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal container -->
+  <div id="modal-root"></div>
+  <!-- Toast container -->
+  <div id="toast-root"></div>
+  <!-- Context menu -->
+  <div id="ctx-root"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sql/sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/sql-hint.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
